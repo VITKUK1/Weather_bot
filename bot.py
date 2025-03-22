@@ -4,6 +4,10 @@ import aiohttp
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
+const express = require('express')
+const app = express()
+const port = process.env.PORT || 4000;
+
 
 # === 🔑 API-ключи ===
 TOKEN = "7504680458:AAHPQowdVf0OC0l-sSP-gA8exyGKHElQVPI"
