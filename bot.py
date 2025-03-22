@@ -8,9 +8,9 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
 
 # === 🔑 API-ключи ===
-TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
-WEATHER_API_KEY = "YOUR_OPENWEATHER_API_KEY"
-CAT_API_KEY = "YOUR_THECATAPI_KEY"
+TOKEN = "7504680458:AAHPQowdVf0OC0l-sSP-gA8exyGKHElQVPI"
+WEATHER_API_KEY = "55dfe164f52d5a0d296b486466a7a0fa"
+CAT_API_KEY = "gM1zOn6z760Gh8qtj8nH5lyyRYY356PKrY5aHnVLeCmdT74x8eIi61h7chji66ab"
 
 # === 🔥 Настройка бота ===
 bot = Bot(token=TOKEN)
