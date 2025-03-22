@@ -27,7 +27,7 @@ async def get_random_cat_video():
     url = "https://api.thecatapi.com/v1/images/search?mime_types=video/mp4"
     headers = {"x-api-key": CAT_API_KEY}
 
-    for _ in range(3):  # Пробуем 3 раза
+    for _ in range(10):  # Пробуем 3 раза
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(url, headers=headers) as response:
