@@ -5,20 +5,20 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 from aiogram.filters import Command
 
-# === 🔑 Укажи свои данные ===
-TOKEN = "7504680458:AAHPQowdVf0OC0l-sSP-gA8exyGKHElQVPI"
-WEATHER_API_KEY = "55dfe164f52d5a0d296b486466a7a0fa"
-CHAT_ID = "1951583388"  # ID пользователя или группы
+# === 🔑 Укажи свои API-ключи ===
+TOKEN = "7504680458:AAHPQowdVf0OC0l-sSP-gA8exyGKHElQVPI"  # Telegram API ключ
+WEATHER_API_KEY = "55dfe164f52d5a0d296b486466a7a0fa"  # OpenWeather API ключ
+CAT_API_KEY = "live_gM1zOn6z760Gh8qtj8nH5lyyRYY356PKrY5aHnVLeCmdT74x8eIi61h7chji66ab"  # The Cat API ключ
+
+CHAT_ID = "1951583388"  # ID чата, куда бот будет отправлять сообщения
 CITY = "Санкт-Петербург"  # Город для прогноза
-CAT_API_KEY = "live_gM1zOn6z760Gh8qtj8nH5lyyRYY356PKrY5aHnVLeCmdT74x8eIi61h7chji66ab"
 
 # === 🔥 Настраиваем бота ===
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 logging.basicConfig(level=logging.INFO)
 
-# Переменная для хранения задачи
-weather_task = None  
+weather_task = None  # Переменная для управления задачей
 
 # === 🌤️ Функция получения погоды ===
 async def get_weather(city):
@@ -33,7 +33,7 @@ async def get_weather(city):
             else:
                 return "Не удалось получить погоду 😔"
 
-# === 🐱 Функция получения случайного видео котика ===
+# === 🐱 Улучшенная функция получения случайного видео котика ===
 async def get_random_cat_video():
     url = "https://api.thecatapi.com/v1/images/search?mime_types=video/mp4"
     headers = {"x-api-key": CAT_API_KEY}
@@ -42,11 +42,11 @@ async def get_random_cat_video():
         async with session.get(url, headers=headers) as response:
             if response.status == 200:
                 data = await response.json()
-                if data:
+                if data and "url" in data[0]:
                     return data[0]["url"]  # Получаем ссылку на видео
-            return None
+            return None  # Если видео не найдено
 
-# === 🕒 Функция ежедневной отправки погоды ===
+# === 🕒 Функция ежедневной отправки погоды и котиков ===
 async def send_daily_weather():
     while True:
         try:
