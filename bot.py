@@ -42,9 +42,13 @@ async def get_random_cat_video():
         async with session.get(url, headers=headers) as response:
             if response.status == 200:
                 data = await response.json()
-                if data and "url" in data[0]:
-                    return data[0]["url"]  # Получаем ссылку на видео
-            return None  # Если видео не найдено
+                
+                # Проверяем, что в ответе есть данные и что это видео (MP4)
+                for item in data:
+                    if item.get("url", "").endswith(".mp4"):  # Проверяем, что это видео
+                        return item["url"]
+                    
+    return None  # Если видео не найдено
 
 # === 🕒 Функция ежедневной отправки погоды и котиков ===
 async def send_daily_weather():
