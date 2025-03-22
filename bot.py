@@ -4,8 +4,6 @@ import aiohttp
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
-const port = process.env.PORT || 4000;
-
 
 # === 🔑 API-ключи ===
 TOKEN = "7504680458:AAHPQowdVf0OC0l-sSP-gA8exyGKHElQVPI"
@@ -29,7 +27,7 @@ async def get_random_cat_video():
     url = "https://api.thecatapi.com/v1/images/search?mime_types=video/mp4"
     headers = {"x-api-key": CAT_API_KEY}
 
-    for _ in range(10):  # Пробуем 3 раза
+    for _ in range(3):  # Пробуем 3 раза
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(url, headers=headers) as response:
