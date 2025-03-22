@@ -18,6 +18,9 @@ logging.basicConfig(level=logging.INFO)
 # Храним данные пользователей (ID -> город)
 user_data = {}
 
+# === 🐱 Резервное видео котика ===
+FALLBACK_CAT_VIDEO = "https://cdn2.thecatapi.com/videos/MTY1ODI3MQ.mp4"
+
 # === 🌤️ Функция получения погоды ===
 async def get_weather(city):
     url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric&lang=ru"
@@ -31,19 +34,23 @@ async def get_weather(city):
             else:
                 return "Не удалось получить погоду 😔"
 
-# === 🐱 Функция получения видео котика ===
+# === 🐱 Функция получения видео котика (с резервом) ===
 async def get_random_cat_video():
     url = "https://api.thecatapi.com/v1/images/search?mime_types=video/mp4"
     headers = {"x-api-key": CAT_API_KEY}
     
     async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers) as response:
-            if response.status == 200:
-                data = await response.json()
-                for item in data:
-                    if item.get("url", "").endswith(".mp4"):
-                        return item["url"]
-    return None
+        try:
+            async with session.get(url, headers=headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    for item in data:
+                        if item.get("url", "").endswith(".mp4"):  # Проверяем, что это видео
+                            return item["url"]
+        except Exception as e:
+            logging.error(f"Ошибка при получении видео котика: {e}")
+
+    return FALLBACK_CAT_VIDEO  # Если видео нет, отправляем резервное
 
 # === 🕒 Функция отправки погоды (учитывает город пользователя) ===
 async def send_daily_weather(user_id, city):
@@ -53,10 +60,7 @@ async def send_daily_weather(user_id, city):
             await bot.send_message(user_id, f"Доброе утро! 🌞\n{weather}")
 
             cat_video = await get_random_cat_video()
-            if cat_video:
-                await bot.send_video(user_id, cat_video)
-            else:
-                await bot.send_message(user_id, "Сегодня без котика 😿")
+            await bot.send_video(user_id, cat_video)
 
             await asyncio.sleep(86400)  # Ждём 24 часа
         except asyncio.CancelledError:
