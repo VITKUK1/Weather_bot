@@ -18,8 +18,8 @@ logging.basicConfig(level=logging.INFO)
 # Храним данные пользователей (ID -> город)
 user_data = {}
 
-# === 🐱 Резервное видео котика ===
-FALLBACK_CAT_VIDEO = "https://cdn2.thecatapi.com/videos/MTY1ODI3MQ.mp4"
+# === 🐱 Резервное видео котика (ЗАМЕНИ file_id НА СВОЙ) ===
+FALLBACK_CAT_VIDEO = "BAACAgIAAxkBAAIBWmYl9TzhxX-2U5lq8u9eXyprlJXRAAItJQAC7_kRS-3FlXJJZ-YjNAQ"
 
 # === 🌤️ Функция получения погоды ===
 async def get_weather(city):
@@ -50,7 +50,7 @@ async def get_random_cat_video():
         except Exception as e:
             logging.error(f"Ошибка при получении видео котика: {e}")
 
-    return FALLBACK_CAT_VIDEO  # Если видео нет, отправляем резервное
+    return None  # Если нет видео, возвращаем None
 
 # === 🕒 Функция отправки погоды (учитывает город пользователя) ===
 async def send_daily_weather(user_id, city):
@@ -60,7 +60,11 @@ async def send_daily_weather(user_id, city):
             await bot.send_message(user_id, f"Доброе утро! 🌞\n{weather}")
 
             cat_video = await get_random_cat_video()
-            await bot.send_video(user_id, cat_video)
+            
+            if cat_video:
+                await bot.send_video(user_id, cat_video)
+            else:
+                await bot.send_video(user_id, FALLBACK_CAT_VIDEO)  # Отправляем резервное видео
 
             await asyncio.sleep(86400)  # Ждём 24 часа
         except asyncio.CancelledError:
