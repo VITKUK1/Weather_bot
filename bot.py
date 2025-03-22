@@ -1,8 +1,8 @@
 import asyncio
 import logging
 import aiohttp
-from aiogram import Bot, Dispatcher
-from aiogram.types import Message
+from aiogram import Bot, Dispatcher, types
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
 
 # === 🔑 API-ключи ===
@@ -17,8 +17,9 @@ logging.basicConfig(level=logging.INFO)
 
 # Храним данные пользователей (ID -> город)
 user_data = {}
+weather_tasks = {}
 
-# === 🐱 Резервное видео котика (ЗАМЕНИ file_id НА СВОЙ) ===
+# === 🐱 Резервное видео котика ===
 FALLBACK_CAT_VIDEO = "BAACAgIAAxkBAAIBWmYl9TzhxX-2U5lq8u9eXyprlJXRAAItJQAC7_kRS-3FlXJJZ-YjNAQ"
 
 # === 🌤️ Функция получения погоды ===
@@ -34,7 +35,7 @@ async def get_weather(city):
             else:
                 return "Не удалось получить погоду 😔"
 
-# === 🐱 Функция получения видео котика (с резервом) ===
+# === 🐱 Функция получения видео котика ===
 async def get_random_cat_video():
     url = "https://api.thecatapi.com/v1/images/search?mime_types=video/mp4"
     headers = {"x-api-key": CAT_API_KEY}
@@ -50,9 +51,9 @@ async def get_random_cat_video():
         except Exception as e:
             logging.error(f"Ошибка при получении видео котика: {e}")
 
-    return None  # Если нет видео, возвращаем None
+    return None  # Если видео нет, возвращаем None
 
-# === 🕒 Функция отправки погоды (учитывает город пользователя) ===
+# === 🕒 Функция отправки погоды (учитывает город) ===
 async def send_daily_weather(user_id, city):
     while True:
         try:
@@ -60,11 +61,10 @@ async def send_daily_weather(user_id, city):
             await bot.send_message(user_id, f"Доброе утро! 🌞\n{weather}")
 
             cat_video = await get_random_cat_video()
-            
             if cat_video:
                 await bot.send_video(user_id, cat_video)
             else:
-                await bot.send_video(user_id, FALLBACK_CAT_VIDEO)  # Отправляем резервное видео
+                await bot.send_video(user_id, FALLBACK_CAT_VIDEO)
 
             await asyncio.sleep(86400)  # Ждём 24 часа
         except asyncio.CancelledError:
@@ -74,22 +74,39 @@ async def send_daily_weather(user_id, city):
             logging.error(f"Ошибка у {user_id}: {e}")
             await asyncio.sleep(60)
 
-# Храним активные задачи погоды
-weather_tasks = {}
+# === 🚀 Функция запуска задачи с погодой ===
+async def start_weather_task(user_id, city):
+    if user_id in weather_tasks and not weather_tasks[user_id].done():
+        return  # Если задача уже запущена, не запускаем повторно
 
-# === 📩 Обработчик команды /start (спрашивает город) ===
+    weather_tasks[user_id] = asyncio.create_task(send_daily_weather(user_id, city))
+
+# === 🛑 Остановка погоды ===
+async def stop_weather(user_id):
+    if user_id in weather_tasks:
+        weather_tasks[user_id].cancel()
+        del weather_tasks[user_id]
+
+# === 📩 Обработчик команды /start (клавиатура с кнопкой) ===
 @dp.message(Command("start"))
 async def start(message: Message):
     user_id = message.from_user.id
-    
+
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Перезапуск бота")]
+        ],
+        resize_keyboard=True
+    )
+
     if user_id in user_data:
-        await message.answer(f"Ты уже выбрал город: {user_data[user_id]} 🌍")
+        await message.answer(f"Ты уже выбрал город: {user_data[user_id]} 🌍", reply_markup=keyboard)
         await start_weather_task(user_id, user_data[user_id])
     else:
-        await message.answer("Привет! В каком ты городе? 🌍 Напиши название города.")
+        await message.answer("Привет! В каком ты городе? 🌍 Напиши название города.", reply_markup=keyboard)
 
 # === 🌎 Обработчик ответа с городом ===
-@dp.message(lambda message: message.from_user.id not in user_data)
+@dp.message(lambda message: message.from_user.id not in user_data and message.text != "Перезапуск бота")
 async def set_city(message: Message):
     user_id = message.from_user.id
     city = message.text.strip()
@@ -98,24 +115,23 @@ async def set_city(message: Message):
     await message.answer(f"Отлично! Буду показывать погоду в {city}. 🌤️")
     await start_weather_task(user_id, city)
 
-# === 🛑 Обработчик команды 'стоп' ===
-@dp.message(lambda message: message.text.lower() == "стоп")
-async def stop_weather(message: Message):
+# === 🔄 Обработчик кнопки "Перезапуск бота" ===
+@dp.message(lambda message: message.text == "Перезапуск бота")
+async def restart_bot(message: Message):
     user_id = message.from_user.id
 
-    if user_id in weather_tasks:
-        weather_tasks[user_id].cancel()
-        del weather_tasks[user_id]
-        await message.answer("Бот остановлен! ❌")
-    else:
-        await message.answer("Бот уже был остановлен.")
+    await stop_weather(user_id)  # Останавливаем отправку погоды
+    if user_id in user_data:
+        del user_data[user_id]  # Сбрасываем город
 
-# === 🚀 Функция запуска задачи с погодой ===
-async def start_weather_task(user_id, city):
-    if user_id in weather_tasks and not weather_tasks[user_id].done():
-        return  # Если задача уже запущена, не запускаем повторно
+    await message.answer("🔄 Бот перезапущен! В каком ты городе? 🌍 Напиши название города.")
 
-    weather_tasks[user_id] = asyncio.create_task(send_daily_weather(user_id, city))
+# === 🛑 Обработчик команды 'стоп' ===
+@dp.message(lambda message: message.text.lower() == "стоп")
+async def stop_weather_command(message: Message):
+    user_id = message.from_user.id
+    await stop_weather(user_id)
+    await message.answer("Бот остановлен! ❌")
 
 # === 🚀 Запуск бота ===
 async def main():
