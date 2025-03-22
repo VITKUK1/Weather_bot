@@ -6,7 +6,7 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.filters import Command
 
 # === 🔑 API-ключи ===
-TOKEN = "7504680458:AAHPQowdVf0OC0l-sSP-gA8exyGKHElQVPI"
+TOKEN = ""
 WEATHER_API_KEY = "55dfe164f52d5a0d296b486466a7a0fa"
 CAT_API_KEY = "live_gM1zOn6z760Gh8qtj8nH5lyyRYY356PKrY5aHnVLeCmdT74x8eIi61h7chji66ab"
 
