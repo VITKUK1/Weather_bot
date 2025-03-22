@@ -6,7 +6,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.utils import executor
 
 # --- Настройки ---
-TOKEN = "7504680458:AAHPQowdVf0OC0l-sSP-gA8exyGKHElQVPI"
+TOKEN = "7504680458"
 WEATHER_API_KEY = "55dfe164f52d5a0d296b486466a7a0fa"
 WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
 CAT_GIF_URL = "https://cataas.com/cat/gif"
