@@ -29,33 +29,6 @@ STICKERS = {
     "rain": "CAACAgIAAxkBAAEIfw1kQvYOMOS7WJnt7vExjcF9Rxjj7QACJQADwDZPE9CUwGRlR08GNAQ",  # 🌧
     "clouds": "CAACAgIAAxkBAAEIfxBkQvYV02-HE9nLk8loCrmRfQgFNQACJAADwDZPE9qXENj4PzJRNAQ"  # ☁️
 }
-
-# === 🕒 Функция получения часового пояса ===
-async def get_timezone(city):
-    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            if response.status == 200:
-                data = await response.json()
-                timezone_offset = data["timezone"]
-                return pytz.FixedOffset(timezone_offset // 60)
-            return None
-
-# === 🕒 Ожидание 9 утра ===
-async def wait_until_9am(city):
-    timezone = await get_timezone(city)
-    if not timezone:
-        return
-
-    now = datetime.datetime.now(timezone)
-    next_9am = now.replace(hour=9, minute=0, second=0, microsecond=0)
-
-    if now >= next_9am:
-        next_9am += datetime.timedelta(days=1)
-
-    wait_time = (next_9am - now).total_seconds()
-    await asyncio.sleep(wait_time)
-
 # === 🐱 Функция получения видео котика ===
 async def get_random_cat_video():
     url = "https://api.thecatapi.com/v1/images/search?mime_types=video/mp4"
@@ -104,7 +77,6 @@ async def get_weather(city):
 async def send_daily_weather(user_id, city):
     while True:
         try:
-            await wait_until_9am(city)
 
             weather_text, weather_sticker = await get_weather(city)
             await bot.send_message(user_id, f"Доброе утро! 🌞\n{weather_text}")
