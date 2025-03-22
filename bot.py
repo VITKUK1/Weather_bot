@@ -1,75 +1,59 @@
-import logging
 import asyncio
+import logging
 import aiohttp
-from aiogram import Bot, Dispatcher, types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from aiogram.utils import executor
+from aiogram import Bot, Dispatcher
+from aiogram.types import Message
+from aiogram.filters import Command
 
-# --- Настройки ---
-TOKEN = "7504680458"
-WEATHER_API_KEY = "55dfe164f52d5a0d296b486466a7a0fa"
-WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather"
-CAT_GIF_URL = "https://cataas.com/cat/gif"
+# === 🔑 Укажи свои данные ===
+TOKEN = "ТВОЙ_ТОКЕН"
+WEATHER_API_KEY = "ТВОЙ_КЛЮЧ_ПОГОДЫ"
+CHAT_ID = "ТВОЙ_CHAT_ID"  # ID пользователя или группы
+CITY = "Москва"  # Город для прогноза
 
-# --- Логирование ---
+# === 🔥 Настраиваем бота ===
+bot = Bot(token=TOKEN)
+dp = Dispatcher()
 logging.basicConfig(level=logging.INFO)
 
-# --- Инициализация бота ---
-bot = Bot(token=TOKEN)
-dp = Dispatcher(bot)
-
-# --- Хранение данных о пользователях ---
-user_cities = {}
-
-# --- Клавиатура ---
-keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
-keyboard.add(KeyboardButton("Установить город 🌍"))
-
-# --- Функция получения погоды ---
+# === 🌤️ Функция получения погоды ===
 async def get_weather(city):
+    url = f"https://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_API_KEY}&units=metric"
     async with aiohttp.ClientSession() as session:
-        params = {"q": city, "appid": WEATHER_API_KEY, "units": "metric", "lang": "ru"}
-        async with session.get(WEATHER_URL, params=params) as response:
+        async with session.get(url) as response:
             if response.status == 200:
                 data = await response.json()
                 temp = data["main"]["temp"]
-                desc = data["weather"][0]["description"]
-                return f"🌤 Погода в *{city}*: {temp}°C, {desc}"
+                weather_desc = data["weather"][0]["description"]
+                return f"Сейчас в {city}: {temp}°C, {weather_desc}"
             else:
-                return None
+                return "Не удалось получить погоду 😔"
 
-# --- Функция получения GIF котика ---
-async def get_cat_gif():
-    return CAT_GIF_URL  # Сайт Cataas всегда даёт новое GIF-изображение кота
-
-# --- Команда /start ---
-@dp.message_handler(commands=["start"])
-async def start(message: types.Message):
-    await message.answer("Привет! Я твой погодный кото-бот! 🐱🌤\nВыбери город, чтобы я каждый день присылал тебе прогноз.", reply_markup=keyboard)
-
-# --- Установка города ---
-@dp.message_handler(lambda message: message.text == "Установить город 🌍")
-async def set_city(message: types.Message):
-    await message.answer("Введите название города:")
-
-@dp.message_handler()
-async def save_city(message: types.Message):
-    user_cities[message.from_user.id] = message.text
-    await message.answer(f"Отлично! Теперь я буду присылать тебе погоду в *{message.text}* каждый день. 🐱")
-
-# --- Рассылка погоды каждый день ---
-async def daily_weather():
+# === 🕒 Функция ежедневной отправки погоды ===
+async def send_daily_weather():
     while True:
-        for user_id, city in user_cities.items():
-            weather = await get_weather(city)
-            cat_gif = await get_cat_gif()
-            if weather:
-                await bot.send_message(user_id, weather, parse_mode="Markdown")
-                await bot.send_animation(user_id, cat_gif)
-        await asyncio.sleep(86400)  # Раз в 24 часа
+        try:
+            weather = await get_weather(CITY)
+            await bot.send_message(CHAT_ID, f"Доброе утро! 🌞\n{weather}")
 
-# --- Запуск бота ---
+            # Отправляем видео котика
+            cat_video = "https://example.com/cat.mp4"  # Замени на реальную ссылку
+            await bot.send_video(CHAT_ID, cat_video)
+
+            await asyncio.sleep(86400)  # Ждём 24 часа (86400 секунд)
+        except Exception as e:
+            logging.error(f"Ошибка: {e}")
+            await asyncio.sleep(60)  # Если ошибка, ждём 1 минуту
+
+# === 📩 Обработчик команды /start ===
+@dp.message(Command("start"))
+async def start(message: Message):
+    await message.answer("Привет! Я буду каждый день присылать погоду и видео котика! 🐱🌤️")
+
+# === 🚀 Запуск бота ===
+async def main():
+    asyncio.create_task(send_daily_weather())  # Запускаем задачу отправки погоды
+    await dp.start_polling(bot)
+
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.create_task(daily_weather())
-    executor.start_polling(dp, skip_updates=True)
+    asyncio.run(main())
