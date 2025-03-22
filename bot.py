@@ -37,8 +37,38 @@ async def send_daily_weather():
             await bot.send_message(CHAT_ID, f"Доброе утро! 🌞\n{weather}")
 
             # Отправляем видео котика
-            cat_video = "https://example.com/cat.mp4"  # Замени на реальную ссылку
-            await bot.send_video(CHAT_ID, cat_video)
+            API_KEY = "live_gM1zOn6z760Gh8qtj8nH5lyyRYY356PKrY5aHnVLeCmdT74x8eIi61h7chji66ab"  # Получи ключ на thecatapi.com
+CHAT_ID = "1951583388"
+CITY = "Санкт-Петербург"
+
+async def get_random_cat_video():
+    url = "https://api.thecatapi.com/v1/images/search?mime_types=video/mp4"
+    headers = {"x-api-key": API_KEY}
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as response:
+            if response.status == 200:
+                data = await response.json()
+                if data:
+                    return data[0]["url"]  # Получаем ссылку на видео
+            return None
+
+async def send_daily_weather():
+    while True:
+        try:
+            weather = await get_weather(CITY)
+            await bot.send_message(CHAT_ID, f"Доброе утро! 🌞\n{weather}")
+
+            cat_video = await get_random_cat_video()
+            if cat_video:
+                await bot.send_video(CHAT_ID, cat_video)
+            else:
+                await bot.send_message(CHAT_ID, "Сегодня без котика 😿")
+
+            await asyncio.sleep(86400)  # Ждём 24 часа
+        except Exception as e:
+            logging.error(f"Ошибка: {e}")
+            await asyncio.sleep(60)  # Если ошибка, ждём 1 минуту
 
             await asyncio.sleep(86400)  # Ждём 24 часа (86400 секунд)
         except Exception as e:
