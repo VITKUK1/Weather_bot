@@ -6,8 +6,8 @@ from aiogram.types import Message
 from aiogram.filters import Command
 
 # === 🔑 Укажи свои данные ===
-TOKEN = "ТВОЙ_ТОКЕН"
-WEATHER_API_KEY = "ТВОЙ_КЛЮЧ_ПОГОДЫ"
+TOKEN = "7504680458"
+WEATHER_API_KEY = "55dfe164f52d5a0d296b486466a7a0fa"
 CHAT_ID = "ТВОЙ_CHAT_ID"  # ID пользователя или группы
 CITY = "Москва"  # Город для прогноза
 
